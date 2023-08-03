@@ -31,7 +31,9 @@ class RedactingFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         message = super().format(record)
-        return filter_datum(self.fields, self.REDACTION, message, self.SEPARATOR)
+        return filter_datum(
+            self.fields, self.REDACTION, message, self.SEPARATOR
+        )
 
 
 def get_logger() -> logging.Logger:
@@ -40,7 +42,9 @@ def get_logger() -> logging.Logger:
     logger.propagate = False
 
     handler = logging.StreamHandler()
-    formatter = RedactingFormatter(fields=("name", "email", "phone", "ssn", "password"))
+    formatter = RedactingFormatter(
+        fields=("name", "email", "phone", "ssn", "password")
+    )
     handler.setFormatter(formatter)
 
     logger.addHandler(handler)
@@ -72,7 +76,9 @@ def main():
     logger = get_logger()
 
     for row in cursor:
-        user_data = "; ".join([f"{field}={row[idx]}" for idx, field in enumerate(PII_FIELDS)])
+        user_data = "; ".join(
+            [f"{field}={row[idx]}" for idx, field in enumerate(PII_FIELDS)]
+        )
         logger.info(user_data)
         print("Filtered fields:")
         for field in PII_FIELDS:

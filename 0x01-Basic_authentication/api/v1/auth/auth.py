@@ -24,3 +24,11 @@ class Auth:
             
         return True
 
+class Auth:
+    # ... Existing methods ...
+
+    def authorization_header(self, request=None) -> str:
+        if request is None or "Authorization" not in request.headers:
+            return None
+        return request.headers["Authorization"]
+

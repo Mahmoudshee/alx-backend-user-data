@@ -35,6 +35,7 @@ def register_user():
 
         return jsonify(response), 400
 
+
 @app.route('/sessions', methods=['POST'])
 def login():
     email = request.form.get('email')
@@ -52,6 +53,7 @@ def login():
     else:
         abort(401)
 
+
 @app.route('/sessions', methods=['DELETE'])
 def logout():
     session_id = request.cookies.get('session_id')
@@ -67,22 +69,22 @@ def logout():
     else:
         abort(403)
 
+
 @app.route('/profile', methods=['GET'])
 def profile():
     session_id = request.cookies.get('session_id')
 
     user = AUTH.get_user_from_session_id(session_id)
 
-
     if user:
         return jsonify({"email": user.email}), 200
     else:
         abort(403)
 
+
 @app.route('/reset_password', methods=['POST'])
 def reset_password():
     email = request.form.get('email')
-
 
     try:
         reset_token = AUTH.get_reset_password_token(email)
@@ -90,18 +92,19 @@ def reset_password():
     except ValueError:
         abort(403)
 
+
 @app.route('/reset_password', methods=['PUT'])
 def update_password():
     email = request.form.get('email')
     reset_token = request.form.get('reset_token')
     new_password = request.form.get('new_password')
 
-
     try:
         AUTH.update_password(reset_token, new_password)
         return jsonify({"email": email, "message": "Password updated"}), 200
     except ValueError:
         abort(403)
+
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port="5000")

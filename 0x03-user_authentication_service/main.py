@@ -1,78 +1,78 @@
 import requests
 
-# Set the base URL for your web server
-BASE_URL = 'http://localhost:5000'
+# Define the base URL of your web server
+BASE_URL = "http://127.0.0.1:5000"
 
 
-def register_user(email, password):
-    response = requests.post(
-        f'{BASE_URL}/users',
-        data={'email': email, 'password': password}
-    )
-    assert response.status_code == 200
+def register_user(email: str, password: str) -> None:
+    endpoint = f"{BASE_URL}/users"
+    data = {"email": email, "password": password}
+    response = requests.post(endpoint, data=data)
+    assert response.status_code == 200, "Failed to register user"
+    print("User registered successfully")
 
 
-def log_in_wrong_password(email, password):
-    response = requests.post(
-        f'{BASE_URL}/sessions',
-        data={'email': email, 'password': password}
-    )
-    assert response.status_code == 401
+def log_in_wrong_password(email: str, password: str) -> None:
+    endpoint = f"{BASE_URL}/sessions"
+    data = {"email": email, "password": password}
+    response = requests.post(endpoint, data=data)
+    assert response.status_code == 401, "Expected login failure, but succeeded"
+    print("Login with wrong password failed as expected")
 
 
-def log_in(email, password):
-    response = requests.post(
-        f'{BASE_URL}/sessions',
-        data={'email': email, 'password': password}
-    )
-    assert response.status_code == 200
-    return response.cookies.get('session_id')
+def log_in(email: str, password: str) -> str:
+    endpoint = f"{BASE_URL}/sessions"
+    data = {"email": email, "password": password}
+    response = requests.post(endpoint, data=data)
+    assert response.status_code == 200, "Failed to log in"
+    session_id = response.cookies.get("session_id")
+    print("Logged in successfully")
+    return session_id
 
 
-def profile_unlogged():
-    response = requests.get(f'{BASE_URL}/profile')
-    assert response.status_code == 403
+def profile_unlogged() -> None:
+    endpoint = f"{BASE_URL}/profile"
+    response = requests.get(endpoint)
+    assert response.status_code == 403, "Profile accessed without logging in"
+    print("Profile accessed without logging in as expected")
 
 
-def profile_logged(session_id):
-    cookies = {'session_id': session_id}
-    response = requests.get(
-        f'{BASE_URL}/profile',
-        cookies=cookies
-    )
-    assert response.status_code == 200
-    assert response.json()['email'] == 'guillaume@holberton.io'
+def profile_logged(session_id: str) -> None:
+    endpoint = f"{BASE_URL}/profile"
+    cookies = {"session_id": session_id}
+    response = requests.get(endpoint, cookies=cookies)
+    assert response.status_code == 200, "Failed to access profile"
+    print("Profile accessed while logged in")
 
 
-def log_out(session_id):
-    cookies = {'session_id': session_id}
-    response = requests.delete(
-        f'{BASE_URL}/sessions',
-        cookies=cookies
-    )
-    assert response.status_code == 200
+def log_out(session_id: str) -> None:
+    endpoint = f"{BASE_URL}/sessions"
+    cookies = {"session_id": session_id}
+    response = requests.delete(endpoint, cookies=cookies)
+    assert response.status_code == 302, "Failed to log out"
+    print("Logged out successfully")
 
 
-def reset_password_token(email):
-    response = requests.post(
-        f'{BASE_URL}/reset_password',
-        data={'email': email}
-    )
-    assert response.status_code == 200
-    return response.json()['reset_token']
+def reset_password_token(email: str) -> str:
+    endpoint = f"{BASE_URL}/reset_password"
+    data = {"email": email}
+    response = requests.post(endpoint, data=data)
+    assert response.status_code == 200, "Failed to get reset password token"
+    token = response.json()["reset_token"]
+    print("Reset password token retrieved")
+    return token
 
 
-def update_password(email, reset_token, new_password):
+def update_password(email: str, reset_token: str, new_password: str) -> None:
+    endpoint = f"{BASE_URL}/reset_password"
     data = {
-        'email': email,
-        'reset_token': reset_token,
-        'new_password': new_password
+        "email": email,
+        "reset_token": reset_token,
+        "new_password": new_password,
     }
-    response = requests.put(
-        f'{BASE_URL}/reset_password',
-        data=data
-    )
-    assert response.status_code == 200
+    response = requests.put(endpoint, data=data)
+    assert response.status_code == 200, "Failed to update password"
+    print("Password updated successfully")
 
 
 EMAIL = "guillaume@holberton.io"

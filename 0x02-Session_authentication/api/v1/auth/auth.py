@@ -1,23 +1,57 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3i
+""" Manage API authentication
 """
-Auth module
-"""
-
 from flask import request
-import os
+from typing import List, TypeVar
+from os import getenv
 
 
 class Auth:
+    """ A class to manage API
+    authentication
     """
-    Auth class
-    """
+    def require_auth(self, path: str, excluded_paths: List[str]) -> bool:
+        """
+            Require the auth
 
-    def session_cookie(self, request=None):
+            Args:
+                path: path to authenticate
+                excluded_paths: list of excluded path to authenticate
+
+            Return:
+                True if is authenticated otherwise false
         """
-        Returns a cookie value from a request
-        """
+        if path is None or excluded_paths is None or len(excluded_paths) == 0:
+            return True
+
+        if path[-1] is not '/':
+            path += '/'
+
+        for paths in excluded_paths:
+            if paths.endswith('*'):
+                if path.startswith(paths[:-1]):
+                    return False
+            elif path == paths:
+                return False
+
+        return True
+
+    def authorization_header(self, request=None) -> str:
+        """ Authorization header """
         if request is None:
             return None
 
-        session_name = os.getenv('SESSION_NAME', '_my_session_id')
-        return request.cookies.get(session_name, None)
+        return request.headers.get('Authorization', None)
+
+    def current_user(self, request=None) -> TypeVar('User'):
+        """ Current user """
+        return None
+
+    def session_cookie(self, request=None):
+        """ Return cookie value from a request """
+        if request is None:
+            return None
+        SESSION_NAME = getenv('SESSION_NAME')
+        cookie = request.cookies.get(SESSION_NAME)
+        if SESSION_NAME in request.cookies:
+            return cookie

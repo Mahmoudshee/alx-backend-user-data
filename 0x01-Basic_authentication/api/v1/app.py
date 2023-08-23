@@ -1,68 +1,74 @@
-from flask import Flask, jsonify, abort
-from flask import Flask, jsonify, abort
-from flask import Blueprint, abort
-from flask import Flask, abort, request
-from api.v1.auth.auth import Auth
+#!/usr/bin/env python3
+"""
+Route module for the API
+"""
+from os import getenv
+from api.v1.views import app_views
+from flask import Flask, jsonify, abort, request
+from flask_cors import (CORS, cross_origin)
+import os
+
 
 app = Flask(__name__)
-app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
-CORS(app, resources={r"/api/*": {"origins": "0.0.0.0"}})
-
+app.register_blueprint(app_views)
+CORS(app, resources={r"/api/v1/*": {"origins": "*"}})
 auth = None
-if os.getenv("AUTH_TYPE") == "auth":
+AUTH_TYPE = getenv('AUTH_TYPE')
+
+if AUTH_TYPE == "basic_auth":
+    from api.v1.auth.basic_auth import BasicAuth
+    auth = BasicAuth()
+else:
+    from api.v1.auth.auth import Auth
     auth = Auth()
 
+
+@app.errorhandler(404)
+def not_found(error) -> str:
+    """ Not found handler
+    """
+    return jsonify({"error": "Not found"}), 404
+
+
+@app.errorhandler(401)
+def unauthorized(error) -> str:
+    """ Not authorized handler
+    """
+    return jsonify({"error": "Unauthorized"}), 401
+
+
+@app.errorhandler(403)
+def forbidden(error) -> str:
+    """ Forbidden handler
+    """
+    return jsonify({"error": "Forbidden"}), 403
+
+
 @app.before_request
-def before_request():
+def before_request() -> str:
+    """Execute before each request
+
+        Return:
+            String or nothing
+    """
     if auth is None:
         return
 
-    excluded_paths = ['/api/v1/status/', '/api/v1/unauthorized/', '/api/v1/forbidden/']
+    expath = ['/api/v1/status/',
+              '/api/v1/unauthorized/',
+              '/api/v1/forbidden/']
 
-    if request.path in excluded_paths:
+    if not (auth.require_auth(request.path, expath)):
         return
 
-    if not auth.require_auth(request.path, excluded_paths):
+    if (auth.authorization_header(request)) is None:
         abort(401)
 
-    auth_header = auth.authorization_header(request)
-    if auth_header is None:
-        abort(401)
-
-    current_user = auth.current_user(request)
-    if current_user is None:
+    if (auth.current_user(request)) is None:
         abort(403)
 
-app_views = Blueprint("app_views", __name__)
-@app_views.route("/api/v1/forbidden", methods=["GET"])
-def forbidden_endpoint():
-    abort(403)
-
-app = Flask(__name__)
-
-# Existing code
-
-@app.errorhandler(401)
-def unauthorized(error):
-    response = jsonify({"error": "Unauthorized"})
-    return response, 401
-
-# Existing code
 
 if __name__ == "__main__":
-    app.run(host=API_HOST, port=API_PORT)
-
-app = Flask(__name__)
-
-# Existing code
-
-@app.errorhandler(403)
-def forbidden(error):
-    response = jsonify({"error": "Forbidden"})
-    return response, 403
-
-# Existing code
-
-if __name__ == "__main__":
-    app.run(host=API_HOST, port=API_PORT)
-
+    host = getenv("API_HOST", "0.0.0.0")
+    port = getenv("API_PORT", "5000")
+    app.run(host=host, port=port)
